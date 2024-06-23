@@ -1,0 +1,27 @@
+.intro-container {
+  width: 80%;
+  margin: 0 auto;
+  text-align: justify;
+  align-self: center;
+  position: relative;
+  padding-top: 15%;
+
+  p {
+    font-size: 18px;
+    line-height: 1.6;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .wave {
+    display: inline-block;
+    transition: transform 0.2s;
+  }
+
+  .wave:hover {
+    transform: translateY(-10px);
+  }
+
+}
