@@ -5,7 +5,7 @@ const ThreeDLine = ({ children }) => {
   const mountRef = useRef(null);
   const lineRef = useRef({ mesh: null });
   const radius = 15;  // Adjusted radius for visibility
-  const scale = 1;    // Adjusted scale for visibility
+  const scale = 1;    
   const segments = 500;
   const colors = ['#A26C92', '#9B4F6F', '#B47D87'];
 
