@@ -1,7 +1,6 @@
 import React from 'react';
 import ThreeDLine from './components/threeDline';
 import WelcomeText from './components/threeDWelcome';
-// import InteractiveSkill from './components/interactiveSkill';
 import InteractiveExperience from './components/interactiveExperience';
 import './App.css';
 
