@@ -1,28 +1,42 @@
-.base-container {
+.app-container {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
   scroll-behavior: smooth;
-  height: 400vh; /* Ensures scrolling */
+  height: 400vh; /* Full viewport height */
   overflow-y: auto;
-  background: transparent; /* Background color to contrast the line */
+  background: transparent;
+  display: flex;
+  flex-direction: column;
 }
 
-h1 {
-  font-size: 2rem;
-  color: white;
-}
+
 canvas {
-  height: 500px !important;
+  height: 900px !important;
   width: 100%;
   margin: 0;
   padding: 0;
   top: 0;
 }
 
-.video-background-container {
-  position: fixed;
+.interactive-skill-container {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #282c34;
+}
+
+.interactive-skill {
   width: 100%;
-  height: 900px;
-  z-index: 1;
+  height: 100%;
+}
+.interactive-experience {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1; /* Behind other content */
+  pointer-events: none; /* Let mouse events pass through */
 }

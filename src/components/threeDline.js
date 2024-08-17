@@ -4,10 +4,10 @@ import * as THREE from 'three';
 const ThreeDLine = ({ children }) => {
   const mountRef = useRef(null);
   const lineRef = useRef({ mesh: null });
-  const radius = 10;  // Adjusted radius for visibility
+  const radius = 15;  // Adjusted radius for visibility
   const scale = 1;    // Adjusted scale for visibility
   const segments = 500;
-  const colors = ['#FD3A00', '#F50300', '#FF004F', '#FF8E00'];
+  const colors = ['#A26C92', '#9B4F6F', '#B47D87'];
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -82,7 +82,7 @@ const ThreeDLine = ({ children }) => {
       const screenHeight = window.innerHeight;
       const scrollHeight = document.body.scrollHeight;
       const controlPoints = [
-        new THREE.Vector3(-window.innerWidth / 2, screenHeight / 3, 0),
+        new THREE.Vector3(-window.innerWidth / 1.5, screenHeight / 3, 0),
         new THREE.Vector3(-window.innerWidth / 4, screenHeight / 6, 0),
         new THREE.Vector3(-window.innerWidth / 4, -screenHeight / 6, 0),
         new THREE.Vector3(window.innerWidth / 4, -screenHeight / 6, 0),
