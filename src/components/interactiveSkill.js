@@ -1,12 +1,15 @@
 // InteractiveSkill.js
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 const InteractiveSkill = () => {
   const mountRef = useRef(null);
 
   useEffect(() => {
     const mount = mountRef.current;
+
+    // Scene, Camera, Renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       75,
@@ -14,30 +17,95 @@ const InteractiveSkill = () => {
       0.1,
       1000
     );
+    camera.position.z = 50;
+
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     mount.appendChild(renderer.domElement);
 
-    // Create 3D object (e.g., a rotating cube)
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+    scene.add(ambientLight);
+    const pointLight = new THREE.PointLight(0xffffff, 1);
+    pointLight.position.set(50, 50, 50);
+    scene.add(pointLight);
 
-    camera.position.z = 5;
+    // Background
+    const textureLoader = new THREE.TextureLoader();
+    const backgroundTexture = textureLoader.load('https://example.com/space-background.jpg');
+    scene.background = backgroundTexture;
 
+    // Create rockets
+    const rockets = [];
+    const createRocket = () => {
+      const geometry = new THREE.CylinderGeometry(0.5, 0.5, 4, 12);
+      const material = new THREE.MeshStandardMaterial({
+        color: Math.random() * 0xffffff,
+        metalness: 0.6,
+        roughness: 0.4,
+      });
+      const rocket = new THREE.Mesh(geometry, material);
+      rocket.position.set(
+        (Math.random() - 0.5) * 100,
+        (Math.random() - 0.5) * 100,
+        (Math.random() - 0.5) * 100
+      );
+      rocket.rotation.x = Math.PI / 2;
+      scene.add(rocket);
+      rockets.push(rocket);
+    };
+
+    for (let i = 0; i < 20; i++) {
+      createRocket();
+    }
+
+    // Create obstacles
+    const obstacles = [];
+    const createObstacle = () => {
+      const geometry = new THREE.DodecahedronGeometry(Math.random() * 3 + 1);
+      const material = new THREE.MeshStandardMaterial({
+        color: Math.random() * 0xff0000,
+        metalness: 0.4,
+        roughness: 0.8,
+      });
+      const obstacle = new THREE.Mesh(geometry, material);
+      obstacle.position.set(
+        (Math.random() - 0.5) * 100,
+        (Math.random() - 0.5) * 100,
+        (Math.random() - 0.5) * 100
+      );
+      scene.add(obstacle);
+      obstacles.push(obstacle);
+    };
+
+    for (let i = 0; i < 10; i++) {
+      createObstacle();
+    }
+
+    // Animation Loop
     const animate = () => {
       requestAnimationFrame(animate);
 
-      // Rotate the cube
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
+      // Ensure rockets and obstacles exist before iteration
+      if (rockets.length > 0) {
+        rockets.forEach((rocket) => {
+          rocket.position.z += 0.5;
+          if (rocket.position.z > 50) rocket.position.z = -50;
+        });
+      }
+
+      if (obstacles.length > 0) {
+        obstacles.forEach((obstacle) => {
+          obstacle.rotation.x += 0.01;
+          obstacle.rotation.y += 0.01;
+        });
+      }
 
       renderer.render(scene, camera);
     };
     animate();
 
-    // Handle window resize
+    // Handle Resize
     const handleResize = () => {
       renderer.setSize(window.innerWidth, window.innerHeight);
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -48,6 +116,8 @@ const InteractiveSkill = () => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      rockets.forEach((rocket) => scene.remove(rocket));
+      obstacles.forEach((obstacle) => scene.remove(obstacle));
       mount.removeChild(renderer.domElement);
     };
   }, []);

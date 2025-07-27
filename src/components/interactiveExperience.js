@@ -3,147 +3,191 @@ import * as THREE from 'three';
 
 const InteractiveExperience = () => {
   const mountRef = useRef(null);
-  const particlesRef = useRef(null);
-  const clickParticlesRef = useRef(null);
 
   useEffect(() => {
     const mount = mountRef.current;
+
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x2E003E, 1);  // Set background to black
+    renderer.setClearColor(0x2E003E);
     mount.appendChild(renderer.domElement);
 
-    // Create a denser particle system
-    const particlesCount = 5000; // Increased particle count for density
-    const geometry = new THREE.BufferGeometry();
+    // 🌌 Particles
+    const particlesCount = 2000;
     const positions = new Float32Array(particlesCount * 3);
     const originalPositions = new Float32Array(particlesCount * 3);
 
-    for (let i = 0; i < particlesCount * 3; i++) {
-      positions[i] = (Math.random() - 0.5) * 50; // Spread particles out more
-      originalPositions[i] = positions[i]; // Store original positions for later use
+    for (let i = 0; i < particlesCount * 3; i += 3) {
+      positions[i] = (Math.random() - 0.5) * 100;
+      positions[i + 1] = (Math.random() - 0.5) * 100;
+      positions[i + 2] = -Math.random() * 100;
+      originalPositions[i] = positions[i];
+      originalPositions[i + 1] = positions[i + 1];
+      originalPositions[i + 2] = positions[i + 2];
     }
 
+    const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const material = new THREE.PointsMaterial({ color: 0xFF69B4, size: 0.05 }); // Smaller particles for star-like appearance
-    const particles = new THREE.Points(geometry, material);
+
+    const particleMaterial = new THREE.PointsMaterial({
+      color: 0xFF69B4,
+      size: 0.004,
+      transparent: true,
+      sizeAttenuation: true,
+      opacity: 1.0,
+    });
+
+    const particles = new THREE.Points(geometry, particleMaterial);
     scene.add(particles);
 
-    camera.position.z = 15; // Adjusted camera position for a better view
+    // 🌀 Vortex tube
+    const tubePath = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0, -60),
+      new THREE.Vector3(0, 0, -80),
+      new THREE.Vector3(2, 1, -100),
+      new THREE.Vector3(-2, -1, -120),
+      new THREE.Vector3(0, 0, -140),
+    ]);
 
-    // Create a click effect container
-    const clickParticles = new THREE.BufferGeometry();
-    const clickParticlesCount = 100; // Number of particles for click effect
-    const clickPositions = new Float32Array(clickParticlesCount * 3);
-    const clickVelocities = new Float32Array(clickParticlesCount * 3);
+    const tubeGeometry = new THREE.TubeGeometry(tubePath, 200, 2.5, 32, false);
+    const tubeMaterial = new THREE.MeshBasicMaterial({
+      color: 0x9B4F6F,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.0,
+    });
 
-    for (let i = 0; i < clickParticlesCount * 3; i++) {
-      clickPositions[i] = 0;
-      clickVelocities[i] = 0;
-    }
+    const blackHoleTube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+    scene.add(blackHoleTube);
 
-    clickParticles.setAttribute('position', new THREE.BufferAttribute(clickPositions, 3));
-    const clickMaterial = new THREE.PointsMaterial({ color: 0xFF69B4, size: 0.1 }); // Red particles for click effect
-    const clickParticlesMesh = new THREE.Points(clickParticles, clickMaterial);
-    scene.add(clickParticlesMesh);
+    // 🖱 Interaction
+    const mouse = new THREE.Vector2();
+    const raycaster = new THREE.Raycaster();
+    const pointer3D = new THREE.Vector3();
 
-    const animate = () => {
-      requestAnimationFrame(animate);
+    let scrollY = 0;
+    let time = 0;
 
-      // Rotate the particles slowly to simulate a starfield
-      particles.rotation.x += 0.0005;
-      particles.rotation.y += 0.0005;
+    const mouseOffset = new THREE.Vector2(0, 0);
+    let targetOffsetX = 0;
+    let targetOffsetY = 0;
 
-      // Update click particles
-      const clickPositionsAttr = clickParticles.getAttribute('position');
-      const clickVelocitiesAttr = clickParticles.getAttribute('position');
-
-      for (let i = 0; i < clickParticlesCount * 3; i += 3) {
-        clickVelocitiesAttr.array[i] *= 0.95; // Dampen velocity
-        clickVelocitiesAttr.array[i + 1] *= 0.95;
-        clickVelocitiesAttr.array[i + 2] *= 0.95;
-
-        clickPositionsAttr.array[i] += clickVelocitiesAttr.array[i];
-        clickPositionsAttr.array[i + 1] += clickVelocitiesAttr.array[i + 1];
-        clickPositionsAttr.array[i + 2] += clickVelocitiesAttr.array[i + 2];
-      }
-
-      clickPositionsAttr.needsUpdate = true;
-
-      renderer.render(scene, camera);
+    const handleMouseMove = (e) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      targetOffsetX = mouse.x * 0.1;
+      targetOffsetY = mouse.y * 0.1;
     };
-    animate();
 
-    // Handle mouse movement
-    const handleMouseMove = (event) => {
-      const x = (event.clientX / window.innerWidth) * 2 - 1;
-      const y = -(event.clientY / window.innerHeight) * 2 + 1;
-      particles.rotation.x = y * 0.2; // Slower rotation on mouse move for subtlety
-      particles.rotation.y = x * 0.2;
+    const handleScroll = () => {
+      scrollY = window.scrollY;
+    };
+
+    const handleResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-
-    // Handle scroll event
-    const handleScroll = () => {
-      const scrollPercent = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-      particles.position.z = scrollPercent * 50 - 15; // Create a parallax effect on scroll
-    };
-
     window.addEventListener('scroll', handleScroll);
-
-    // Handle particle click effect
-    const handleClick = (event) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-      // Create a ray from the camera to the mouse position
-      const mouseVector = new THREE.Vector2(x, y);
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouseVector, camera);
-
-      // Spread particles on click
-      const positionsAttr = geometry.attributes.position.array;
-
-      for (let i = 0; i < positionsAttr.length; i += 3) {
-        const dx = positionsAttr[i] - (x * 50); // Scale factor for position
-        const dy = positionsAttr[i + 1] - (y * 50);
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < 5) { // Threshold for distance
-          // Apply a force to spread the particles
-          clickPositions[i] = positionsAttr[i];
-          clickPositions[i + 1] = positionsAttr[i + 1];
-          clickPositions[i + 2] = positionsAttr[i + 2];
-
-          clickVelocities[i] = (Math.random() - 0.5) * 2;
-          clickVelocities[i + 1] = (Math.random() - 0.5) * 2;
-          clickVelocities[i + 2] = (Math.random() - 0.5) * 2;
-        }
-      }
-
-      clickParticles.getAttribute('position').needsUpdate = true;
-    };
-
-    window.addEventListener('click', handleClick);
-
-    // Handle window resize
-    const handleResize = () => {
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-    };
-
     window.addEventListener('resize', handleResize);
 
+    // 🔄 Animate
+    const animate = () => {
+      requestAnimationFrame(animate);
+      time += 0.005;
+
+      const scrollPercent = Math.min(scrollY / (document.body.scrollHeight - window.innerHeight), 1);
+      const tubeStartScroll = 0.2;
+
+      mouseOffset.x += (targetOffsetX - mouseOffset.x) * 0.05;
+      mouseOffset.y += (targetOffsetY - mouseOffset.y) * 0.05;
+
+      // 🎥 Camera
+      if (scrollPercent < tubeStartScroll) {
+        const z = -scrollPercent * 60;
+        camera.position.set(mouseOffset.x, mouseOffset.y, z);
+        camera.lookAt(0, 0, z - 1);
+      } else {
+        const t = (scrollPercent - tubeStartScroll) / (1 - tubeStartScroll);
+        const point = tubePath.getPoint(t);
+        const look = tubePath.getPoint(Math.min(t + 0.01, 1));
+        point.x += mouseOffset.x;
+        point.y += mouseOffset.y;
+        camera.position.copy(point);
+        camera.lookAt(look);
+      }
+
+      // 🌌 Fade particles
+      if (scrollPercent < 0.38) {
+        particleMaterial.opacity = 1.0;
+      } else if (scrollPercent < 0.48) {
+        particleMaterial.opacity = 1.0 - (scrollPercent - 0.38) * 10;
+      } else {
+        particleMaterial.opacity = 0.0;
+      }
+
+      // 🌀 Fade-in tube (no scaling)
+      if (scrollPercent >= 0.20) {
+        const t = Math.min((scrollPercent - 0.20) / 0.25, 1);
+        const eased = t * t * (3 - 2 * t);
+        tubeMaterial.opacity = eased * 0.1;
+      } else {
+        tubeMaterial.opacity = 0.0;
+      }
+
+      // 🧲 Real repulsion from mouse
+      raycaster.setFromCamera(mouse, camera);
+      const influencePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), camera.position.z - 10);
+      raycaster.ray.intersectPlane(influencePlane, pointer3D);
+
+      const posAttr = geometry.getAttribute('position');
+      for (let i = 0; i < particlesCount; i++) {
+        const ix = i * 3;
+        const iy = ix + 1;
+        const iz = ix + 2;
+
+        const fx = originalPositions[ix] + Math.sin(time + i) * 0.05;
+        const fy = originalPositions[iy] + Math.cos(time + i) * 0.05;
+        const fz = originalPositions[iz];
+
+        const dx = fx - pointer3D.x;
+        const dy = fy - pointer3D.y;
+        const dz = fz - pointer3D.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        let px = fx;
+        let py = fy;
+        let pz = fz;
+
+        const forceRadius = 5.0;
+        const forceStrength = 0.1;
+
+        if (dist < forceRadius) {
+          const push = (1 - dist / forceRadius) * forceStrength;
+          px += dx * push;
+          py += dy * push;
+          pz += dz * push;
+        }
+
+        posAttr.array[ix] += (px - posAttr.array[ix]) * 0.05;
+        posAttr.array[iy] += (py - posAttr.array[iy]) * 0.05;
+        posAttr.array[iz] += (pz - posAttr.array[iz]) * 0.05;
+      }
+
+      posAttr.needsUpdate = true;
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
     return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('click', handleClick);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
       mount.removeChild(renderer.domElement);
     };
   }, []);

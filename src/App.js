@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Canvas } from '@react-three/fiber';
 import ThreeDLine from './components/threeDline';
 import WelcomeText from './components/threeDWelcome';
 import InteractiveExperience from './components/interactiveExperience';
+
 import './App.css';
 
 const App = () => {
@@ -14,9 +16,6 @@ const App = () => {
             <WelcomeText />
           </div>
         </ThreeDLine>
-        {/* <div className='interactive-skill-container'>
-          <InteractiveSkill />
-        </div> */}
       </div>
     </div>
   );
